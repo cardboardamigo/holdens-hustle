@@ -775,6 +775,233 @@
     main.insertBefore(banner, main.firstChild);
   }
 
+  // ---- Contact Lookup & Invite Friends ----
+  const $inviteSearch = document.getElementById('invite-search');
+  const $inviteContactsBtn = document.getElementById('invite-contacts-btn');
+  const $inviteResults = document.getElementById('invite-results');
+  const $inviteSelected = document.getElementById('invite-selected');
+  const $inviteSelectedInfo = document.getElementById('invite-selected-info');
+  const $inviteSendBtn = document.getElementById('invite-send-btn');
+  const $inviteShareBtn = document.getElementById('invite-share-btn');
+
+  let cachedContacts = [];
+  let selectedContact = null;
+
+  function getInviteMessage(total, streak) {
+    return `I'm on a ${streak}-day streak and earned $${total} on Holden's Hustle! Think you can keep up? Start your own hustle: ${window.location.origin}`;
+  }
+
+  // Contact Picker API — loads contacts from the device
+  async function pickContactsFromDevice() {
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      return null; // API not supported
+    }
+    try {
+      const props = ['name', 'tel', 'email'];
+      const supported = await navigator.contacts.getProperties();
+      const validProps = props.filter(function (p) { return supported.includes(p); });
+      const contacts = await navigator.contacts.select(validProps, { multiple: true });
+      return contacts.map(function (c) {
+        return {
+          name: (c.name && c.name[0]) || '',
+          phone: (c.tel && c.tel[0]) || '',
+          email: (c.email && c.email[0]) || ''
+        };
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function filterContacts(query) {
+    if (!query || query.length < 1) return [];
+    var q = query.toLowerCase();
+    return cachedContacts.filter(function (c) {
+      return (c.name && c.name.toLowerCase().indexOf(q) !== -1) ||
+             (c.phone && c.phone.replace(/\D/g, '').indexOf(q.replace(/\D/g, '')) !== -1 && q.replace(/\D/g, '').length > 0) ||
+             (c.email && c.email.toLowerCase().indexOf(q) !== -1);
+    }).slice(0, 6);
+  }
+
+  function renderContactResults(contacts) {
+    $inviteResults.innerHTML = '';
+    if (contacts.length === 0) {
+      $inviteResults.style.display = 'none';
+      return;
+    }
+    $inviteResults.style.display = 'block';
+    contacts.forEach(function (c) {
+      var item = document.createElement('div');
+      item.className = 'invite-result-item';
+      var detail = c.phone || c.email || '';
+      item.innerHTML =
+        '<div class="invite-result-name">' + escapeHtml(c.name || 'Unknown') + '</div>' +
+        (detail ? '<div class="invite-result-detail">' + escapeHtml(detail) + '</div>' : '');
+      item.addEventListener('click', function () {
+        selectContact(c);
+      });
+      $inviteResults.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  function selectContact(contact) {
+    selectedContact = contact;
+    $inviteResults.style.display = 'none';
+    $inviteSearch.value = contact.name || contact.phone || contact.email || '';
+    $inviteSelected.style.display = 'block';
+    var lines = ['<strong>' + escapeHtml(contact.name || 'Friend') + '</strong>'];
+    if (contact.phone) lines.push(escapeHtml(contact.phone));
+    if (contact.email) lines.push(escapeHtml(contact.email));
+    $inviteSelectedInfo.innerHTML = lines.join('<br>');
+  }
+
+  function clearSelection() {
+    selectedContact = null;
+    $inviteSelected.style.display = 'none';
+    $inviteSelectedInfo.innerHTML = '';
+  }
+
+  async function sendInvite() {
+    if (!selectedContact) return;
+    var data = loadData();
+    var result = calculateStreak(data);
+    var total = data.bankedEarnings + calcTotal(result.streak);
+    var message = getInviteMessage(total, result.streak);
+
+    // Try Web Share API first
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Holden's Hustle — Challenge!",
+          text: message,
+          url: window.location.origin
+        });
+        showInviteToast('Invite sent!');
+        clearSelection();
+        $inviteSearch.value = '';
+        return;
+      } catch (e) {
+        // User cancelled or share failed, fall through to SMS/email
+      }
+    }
+
+    // Fallback: SMS or email
+    if (selectedContact.phone) {
+      var smsBody = encodeURIComponent(message);
+      window.open('sms:' + encodeURIComponent(selectedContact.phone) + '?body=' + smsBody);
+      showInviteToast('Opening messages...');
+    } else if (selectedContact.email) {
+      var subject = encodeURIComponent("Join me on Holden's Hustle!");
+      var body = encodeURIComponent(message);
+      window.open('mailto:' + encodeURIComponent(selectedContact.email) + '?subject=' + subject + '&body=' + body);
+      showInviteToast('Opening email...');
+    } else {
+      showInviteToast('No phone or email found for this contact.');
+    }
+    clearSelection();
+    $inviteSearch.value = '';
+  }
+
+  async function shareInviteLink() {
+    var data = loadData();
+    var result = calculateStreak(data);
+    var total = data.bankedEarnings + calcTotal(result.streak);
+    var message = getInviteMessage(total, result.streak);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Holden's Hustle — Challenge!",
+          text: message,
+          url: window.location.origin
+        });
+        showInviteToast('Shared!');
+        return;
+      } catch (e) { /* cancelled */ }
+    }
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(message);
+      showInviteToast('Invite link copied!');
+    } catch (e) {
+      showInviteToast('Could not share. Copy this link: ' + window.location.origin);
+    }
+  }
+
+  function showInviteToast(msg) {
+    var existing = document.querySelector('.invite-toast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.className = 'invite-toast';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 2500);
+  }
+
+  function initInviteSection() {
+    // Contact Picker button (device contacts)
+    var contactsSupported = ('contacts' in navigator && 'ContactsManager' in window);
+    if (!contactsSupported) {
+      $inviteContactsBtn.style.display = 'none';
+    }
+
+    $inviteContactsBtn.addEventListener('click', async function () {
+      var contacts = await pickContactsFromDevice();
+      if (contacts && contacts.length > 0) {
+        cachedContacts = contacts;
+        renderContactResults(contacts);
+      }
+    });
+
+    // Search-as-you-type filtering of cached contacts
+    $inviteSearch.addEventListener('input', function () {
+      clearSelection();
+      var query = $inviteSearch.value.trim();
+      if (cachedContacts.length > 0 && query.length > 0) {
+        var matches = filterContacts(query);
+        renderContactResults(matches);
+      } else if (query.length === 0) {
+        $inviteResults.style.display = 'none';
+      }
+    });
+
+    // If user types a raw phone or email (no cached contacts), let them invite directly
+    $inviteSearch.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        var val = $inviteSearch.value.trim();
+        if (!selectedContact && val.length > 0) {
+          // Detect if it looks like a phone or email
+          var isEmail = val.indexOf('@') !== -1;
+          var isPhone = /^\+?[\d\s\-()]{7,}$/.test(val);
+          if (isEmail) {
+            selectContact({ name: val, phone: '', email: val });
+          } else if (isPhone) {
+            selectContact({ name: val, phone: val, email: '' });
+          }
+        }
+      }
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!$inviteResults.contains(e.target) && e.target !== $inviteSearch && e.target !== $inviteContactsBtn) {
+        $inviteResults.style.display = 'none';
+      }
+    });
+
+    // Send invite to selected contact
+    $inviteSendBtn.addEventListener('click', sendInvite);
+
+    // Share invite link (general share)
+    $inviteShareBtn.addEventListener('click', shareInviteLink);
+  }
+
   // ---- Init ----
   function init() {
     // ?reset URL param: clear localStorage and re-seed (for testing)
@@ -812,6 +1039,9 @@
 
     // Run button
     $runButton.addEventListener('click', handleCheckIn);
+
+    // Invite section
+    initInviteSection();
 
     // Render
     renderUI(data, false);
