@@ -140,6 +140,35 @@
     return (streak * (streak + 1)) / 2;
   }
 
+  // Find the date that crossed a milestone target (e.g. 500)
+  function findMilestoneDate(data, target) {
+    const dates = Object.keys(data.checkIns).filter((k) => data.checkIns[k]).sort();
+    if (dates.length === 0) return null;
+
+    let banked = 0;
+    let streakDay = 0;
+
+    for (let i = 0; i < dates.length; i++) {
+      if (i === 0) {
+        streakDay = 1;
+      } else {
+        const curr = keyToDate(dates[i]);
+        const prev = keyToDate(dates[i - 1]);
+        const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+        if (diff === 1) {
+          streakDay++;
+        } else {
+          banked += calcTotal(streakDay);
+          streakDay = 1;
+        }
+      }
+
+      const total = banked + calcTotal(streakDay);
+      if (total >= target) return dates[i];
+    }
+    return null;
+  }
+
   // ---- Motivational Messages ----
   function getMotivationalMessage(streak, total, justCheckedIn) {
     const messages = [];
@@ -397,6 +426,9 @@
     const today = getToday();
     const todayKey = dateToKey(today);
 
+    // Find the $500 milestone date for highlighting
+    const milestoneDate = data.milestone500Shown ? findMilestoneDate(data, 500) : null;
+
     // Show the current month + enough to capture the streak
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1, 12, 0, 0);
     // Go back one more month to show more history
@@ -430,6 +462,20 @@
 
       if (key === todayKey) {
         el.classList.add('today');
+      }
+
+      // Mark the $500 milestone day with a trophy
+      if (milestoneDate && key === milestoneDate) {
+        el.classList.add('milestone');
+        el.innerHTML = d.getDate() + '<span class="milestone-badge">\uD83C\uDFC6</span>';
+        el.addEventListener('click', () => {
+          launchConfetti(200, true);
+          $videoModal.classList.add('active');
+          $milestoneVideo.currentTime = 0;
+          try {
+            $milestoneVideo.play();
+          } catch (e) { /* autoplay may be blocked */ }
+        });
       }
 
       $calendar.appendChild(el);
