@@ -459,6 +459,29 @@ html, body {
   color: var(--red);
 }
 
+.calendar-day.milestone {
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--gold), #b8860b);
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0 0 12px var(--gold-glow);
+  animation: milestoneGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes milestoneGlow {
+  from { box-shadow: 0 0 8px var(--gold-glow); }
+  to { box-shadow: 0 0 18px var(--gold-glow); }
+}
+
+.milestone-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 0.6rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* Stats */
 .stats-section {
   display: grid;
