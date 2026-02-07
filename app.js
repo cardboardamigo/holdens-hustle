@@ -8,7 +8,7 @@
   // ---- Constants ----
   const STORAGE_KEY = 'holdens_hustle_data';
   const SEED_START_DATE = '2026-01-10'; // Day 1
-  const SEED_DAYS = 28; // Pre-populated days
+  const SEED_DAYS = 28; // Pre-populated days (Jan 10 – Feb 6 → streak 28; Feb 7 check-in = day 29)
 
   // ---- DOM Elements ----
   const $moneyCounter = document.getElementById('money-counter');
@@ -731,7 +731,14 @@
 
   // ---- Init ----
   function init() {
-    // Seed data if first launch
+    // ?reset URL param: clear localStorage and re-seed (for testing)
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('reset')) {
+      localStorage.removeItem(STORAGE_KEY);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // Seed data if first launch (or after reset)
     let data = loadData();
     if (!data) {
       data = seedInitialData();
