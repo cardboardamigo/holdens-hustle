@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Holden's mile-a-day money tracker">
+  <title>Holden's Hustle</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="app">
+    <header class="app-header">
+      <h1 class="app-title">HOLDEN'S HUSTLE</h1>
+      <p class="app-subtitle">Run a mile. Stack that cash.</p>
+      <div class="profile-pic">
+        <img src="/holden.jpg" alt="Holden" id="profile-img" onerror="this.style.display='none'; document.querySelector('.fallback-initial').style.display='flex'">
+        <div class="fallback-initial" style="display:none">H</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Money Display -->
+      <div class="money-display" id="money-display">
+        <div class="money-label">TOTAL EARNED</div>
+        <div class="money-amount-wrapper">
+          <span class="money-dollar">$</span>
+          <span class="money-amount" id="money-counter">0</span>
+        </div>
+        <div class="money-sublabel" id="money-sublabel"></div>
+      </div>
+
+      <!-- Streak Info -->
+      <div class="streak-info">
+        <div class="streak-card">
+          <span class="streak-number" id="streak-count">0</span>
+          <span class="streak-label">DAY STREAK</span>
+        </div>
+        <div class="streak-fire" id="streak-fire">🔥</div>
+        <div class="streak-card">
+          <span class="streak-number" id="today-value">$0</span>
+          <span class="streak-label">TODAY'S VALUE</span>
+        </div>
+      </div>
+
+      <!-- Run Button -->
+      <button class="run-button" id="run-button">
+        <span class="run-icon">🏃</span>
+        <span class="run-text">I RAN TODAY!</span>
+      </button>
+      <div class="already-done" id="already-done" style="display:none">
+        <span class="checkmark">✅</span> Nice work today, Holden!
+      </div>
+
+      <!-- Motivation -->
+      <div class="motivation" id="motivation"></div>
+
+      <!-- 7PM Reminder Banner -->
+      <div class="reminder-banner" id="reminder-banner" style="display:none">
+        <span class="reminder-icon">⏰</span>
+        <span class="reminder-text">Hey! Don't forget to run today — your streak is on the line!</span>
+      </div>
+
+      <!-- Calendar -->
+      <div class="calendar-section">
+        <h2 class="section-title">YOUR STREAK</h2>
+        <div class="calendar-header" id="calendar-header"></div>
+        <div class="calendar" id="calendar"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-section">
+        <div class="stat-card">
+          <span class="stat-value" id="stat-miles">0</span>
+          <span class="stat-label">MILES RUN</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-avg">$0</span>
+          <span class="stat-label">AVG / DAY</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-next-milestone">$0</span>
+          <span class="stat-label">NEXT MILESTONE</span>
+        </div>
+      </div>
+
+      <!-- Notification permission -->
+      <div class="notify-prompt" id="notify-prompt" style="display:none">
+        <p>Want a reminder at 7 PM if you haven't run yet?</p>
+        <button class="notify-btn" id="notify-btn">Enable Reminders 🔔</button>
+      </div>
+
+      <footer class="app-footer">
+        <p>1 mile = 1 more dollar on the streak 💪</p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Video Modal for $500 milestone -->
+  <div class="video-modal" id="video-modal">
+    <div class="video-overlay" id="video-overlay"></div>
+    <div class="video-content">
+      <button class="video-close" id="video-close">&times;</button>
+      <h2 class="video-title">🎉 $500 MILESTONE! 🎉</h2>
+      <p class="video-subtitle">Holden, you absolute legend.</p>
+      <video id="milestone-video" controls playsinline>
+        <source src="/milestone-500.mp4" type="video/mp4">
+        Your browser does not support video.
+      </video>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
