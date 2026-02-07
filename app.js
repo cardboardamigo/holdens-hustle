@@ -7,8 +7,8 @@
 
   // ---- Constants ----
   const STORAGE_KEY = 'holdens_hustle_data';
-  const SEED_START_DATE = '2026-01-07'; // Day 1
-  const SEED_DAYS = 31; // Pre-populated days (Jan 7 – Feb 6 → streak 31, total $496; check-in on Feb 7 → $528, triggers $500 milestone)
+  const SEED_START_DATE = '2026-01-10'; // Day 1
+  const SEED_DAYS = 28; // Pre-populated days (Jan 10 – Feb 6 → streak 28; Feb 7 check-in = day 29)
 
   // ---- DOM Elements ----
   const $moneyCounter = document.getElementById('money-counter');
