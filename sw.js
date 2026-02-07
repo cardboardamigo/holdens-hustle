@@ -5,7 +5,7 @@ const ASSETS = [
   '/styles.css',
   '/app.js',
   '/manifest.json',
-  '/holden.jpg'
+  '/holden.png'
 ];
 
 // Install: cache core assets
