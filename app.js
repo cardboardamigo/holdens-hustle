@@ -7,8 +7,8 @@
 
   // ---- Constants ----
   const STORAGE_KEY = 'holdens_hustle_data';
-  const SEED_START_DATE = '2026-01-10'; // Day 1
-  const SEED_DAYS = 28; // Pre-populated days (Jan 10 – Feb 6 → streak 28; Feb 7 check-in = day 29)
+  const SEED_START_DATE = '2026-01-06'; // Day 1
+  const SEED_DAYS = 32; // Pre-populated days (Jan 6 – Feb 6 → streak 32; Feb 7 check-in = day 33)
 
   // ---- DOM Elements ----
   const $moneyCounter = document.getElementById('money-counter');
