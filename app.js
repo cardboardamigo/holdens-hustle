@@ -8,7 +8,7 @@
   // ---- Constants ----
   const STORAGE_KEY = 'holdens_hustle_data';
   const SEED_START_DATE = '2026-01-10'; // Day 1
-  const SEED_DAYS = 28; // Pre-populated days (Jan 10 – Feb 6 → streak 28; Feb 7 check-in = day 29)
+  const SEED_DAYS = 29; // Pre-populated days (Jan 10 – Feb 7 → streak 29)
 
   // ---- DOM Elements ----
   const $moneyCounter = document.getElementById('money-counter');
@@ -33,6 +33,10 @@
   const $videoOverlay = document.getElementById('video-overlay');
   const $milestoneVideo = document.getElementById('milestone-video');
   const $confettiCanvas = document.getElementById('confetti-canvas');
+  const $runConfirmModal = document.getElementById('run-confirm-modal');
+  const $runConfirmDate = document.getElementById('run-confirm-date');
+  const $runConfirmYes = document.getElementById('run-confirm-yes');
+  const $runConfirmNo = document.getElementById('run-confirm-no');
 
   // ---- Audio Context ----
   let audioCtx = null;
@@ -1002,6 +1006,83 @@
     $inviteShareBtn.addEventListener('click', shareInviteLink);
   }
 
+  // ---- Missed-Run Confirmation ----
+  function getMissedYesterday(data) {
+    const todayKey = dateToKey(getToday());
+    const yesterdayKey = dateToKey(getYesterday());
+
+    // Already checked in yesterday — no issue
+    if (data.checkIns[yesterdayKey]) return null;
+
+    // Already checked in today — streak is alive, no need to ask
+    if (data.checkIns[todayKey]) return null;
+
+    // Already dismissed this confirmation for this date
+    if (data.lastConfirmationDismissed === yesterdayKey) return null;
+
+    // Get sorted check-in dates (most recent first)
+    const dates = Object.keys(data.checkIns)
+      .filter(function (k) { return data.checkIns[k]; })
+      .sort()
+      .reverse();
+
+    if (dates.length === 0) return null;
+
+    const lastDate = dates[0];
+
+    // Calculate the day before yesterday
+    const dayBeforeYesterday = new Date(getYesterday());
+    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 1);
+    const dayBeforeYesterdayKey = dateToKey(dayBeforeYesterday);
+
+    // Only prompt if the last check-in was exactly 2 days ago.
+    // This means there's a 1-day gap (yesterday) that could be filled
+    // to save the streak.
+    if (lastDate === dayBeforeYesterdayKey) {
+      return yesterdayKey;
+    }
+
+    return null;
+  }
+
+  function formatDateForDisplay(dateKey) {
+    const date = keyToDate(dateKey);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  function showRunConfirmation(data, missedDateKey) {
+    var formatted = formatDateForDisplay(missedDateKey);
+    $runConfirmDate.textContent = formatted;
+
+    // Show modal
+    $runConfirmModal.classList.add('active');
+
+    // Yes — mark the missed day as checked in
+    $runConfirmYes.addEventListener('click', function () {
+      data.checkIns[missedDateKey] = true;
+      saveData(data);
+      $runConfirmModal.classList.remove('active');
+
+      // Play celebration
+      playChaChingSound();
+      launchConfetti(80, false);
+
+      continueInit(data);
+    }, { once: true });
+
+    // No — dismiss and proceed with streak break
+    $runConfirmNo.addEventListener('click', function () {
+      data.lastConfirmationDismissed = missedDateKey;
+      saveData(data);
+      $runConfirmModal.classList.remove('active');
+      continueInit(data);
+    }, { once: true });
+  }
+
   // ---- Init ----
   function init() {
     // ?reset URL param: clear localStorage and re-seed (for testing)
@@ -1018,12 +1099,24 @@
       saveData(data);
     }
 
+    // Init canvas early (needed if confirmation triggers confetti)
+    initConfettiCanvas();
+
+    // Check for a missed yesterday BEFORE processing streak break.
+    // If the user forgot to mark their run, give them a chance to confirm.
+    const missedDate = getMissedYesterday(data);
+    if (missedDate) {
+      showRunConfirmation(data, missedDate);
+      return; // continueInit will be called after user responds
+    }
+
+    continueInit(data);
+  }
+
+  function continueInit(data) {
     // Handle potential streak break
     handleStreakBreak(data);
     data = loadData(); // reload after potential banking
-
-    // Init canvas
-    initConfettiCanvas();
 
     // Register SW
     registerServiceWorker();
