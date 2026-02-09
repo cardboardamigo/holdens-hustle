@@ -9,6 +9,8 @@
   const STORAGE_KEY = 'holdens_hustle_data';
   const SEED_START_DATE = '2026-01-10'; // Day 1
   const SEED_DAYS = 29; // Pre-populated days (Jan 10 – Feb 7 → streak 29)
+  const MILES_PER_DAY = 2; // Miles per run day
+  const APP_DATE_OVERRIDE = '2026-02-08'; // Lock app to this date (null to use real date)
 
   // ---- DOM Elements ----
   const $moneyCounter = document.getElementById('money-counter');
@@ -37,6 +39,7 @@
   const $runConfirmDate = document.getElementById('run-confirm-date');
   const $runConfirmYes = document.getElementById('run-confirm-yes');
   const $runConfirmNo = document.getElementById('run-confirm-no');
+  const $upcomingDays = document.getElementById('upcoming-days');
 
   // ---- Audio Context ----
   let audioCtx = null;
@@ -90,6 +93,10 @@
   }
 
   function getToday() {
+    if (APP_DATE_OVERRIDE) {
+      const parts = APP_DATE_OVERRIDE.split('-');
+      return new Date(+parts[0], +parts[1] - 1, +parts[2], 12, 0, 0);
+    }
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
   }
@@ -183,7 +190,7 @@
         `Day ${streak} in the books! Keep stacking!`,
         `$${total} total! That money is REAL.`,
         `${streak} days straight. You're a machine, Holden!`,
-        `Another mile, another pile of cash!`
+        `Another ${MILES_PER_DAY} miles, another pile of cash!`
       );
       if (streak >= 30) messages.push(`${streak} days! That's a whole MONTH of running!`);
       if (streak >= 50) messages.push(`50+ days?! You're in elite territory!`);
@@ -203,7 +210,7 @@
 
       messages.push(
         `Tomorrow's run is worth $${streak + 1}. Don't leave that on the table.`,
-        `You've run ${streak} miles. That's basically ${(streak * 1.6).toFixed(1)} kilometers!`,
+        `You've run ${streak * MILES_PER_DAY} miles. That's basically ${(streak * MILES_PER_DAY * 1.6).toFixed(1)} kilometers!`,
         `Every day the price goes UP. Day ${streak + 5} is worth $${streak + 5}!`,
         `Streak alive. Money growing. Keep it up, Holden.`
       );
@@ -556,6 +563,39 @@
     }
   }
 
+  // ---- Upcoming Days ----
+  function renderUpcomingDays(data) {
+    if (!$upcomingDays) return;
+    $upcomingDays.innerHTML = '';
+
+    const result = calculateStreak(data);
+    const { streak, checkedToday } = result;
+    const today = getToday();
+    const todayKey = dateToKey(today);
+
+    // Start from today if not checked in, or tomorrow if already done
+    const startOffset = checkedToday ? 1 : 0;
+    const startDayNum = streak + 1;
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + startOffset + i);
+      const dayNum = startDayNum + i;
+      const key = dateToKey(d);
+      const isToday = key === todayKey;
+
+      const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      const el = document.createElement('div');
+      el.className = 'upcoming-day' + (isToday ? ' upcoming-today' : '');
+      el.innerHTML =
+        '<div class="upcoming-date">' + dateStr + '</div>' +
+        '<div class="upcoming-day-num">Day ' + dayNum + '</div>' +
+        '<div class="upcoming-value">$' + dayNum + '</div>';
+      $upcomingDays.appendChild(el);
+    }
+  }
+
   // ---- Render UI ----
   function renderUI(data, animate) {
     const result = calculateStreak(data);
@@ -619,7 +659,7 @@
 
     // Stats
     const allCheckIns = Object.keys(data.checkIns).filter((k) => data.checkIns[k]).length;
-    $statMiles.textContent = allCheckIns;
+    $statMiles.textContent = allCheckIns * MILES_PER_DAY;
     $statAvg.textContent = `$${allCheckIns > 0 ? Math.round(total / allCheckIns) : 0}`;
 
     // Next milestone
@@ -629,6 +669,9 @@
 
     // Calendar
     renderCalendar(data);
+
+    // Upcoming days
+    renderUpcomingDays(data);
 
     // Notifications
     initNotifications(data);

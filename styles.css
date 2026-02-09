@@ -480,6 +480,62 @@ html, body {
   pointer-events: none;
 }
 
+/* Upcoming Days */
+.upcoming-section {
+  margin: 28px 0;
+}
+
+.upcoming-days {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.upcoming-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: transform 0.15s ease;
+}
+
+.upcoming-today {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.08);
+  box-shadow: 0 0 10px var(--gold-glow);
+}
+
+.upcoming-date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 120px;
+}
+
+.upcoming-today .upcoming-date {
+  color: var(--gold);
+}
+
+.upcoming-day-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.upcoming-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green);
+  min-width: 50px;
+  text-align: right;
+}
+
 /* Stats */
 .stats-section {
   display: grid;
